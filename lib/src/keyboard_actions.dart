@@ -145,6 +145,20 @@ class KeyboardActions extends StatefulWidget {
         submitText = null,
         onSubmit = null;
 
+  /// Closes the keyboard and toolbar managed by the nearest [KeyboardActions].
+  ///
+  /// [context] must be below that widget. Custom toolbar buttons can use this
+  /// operation to run the built-in Done button's dismissal callbacks and cancel
+  /// any field switch still in progress.
+  static void dismiss(BuildContext context) {
+    final state = context.findAncestorStateOfType<KeyboardActionsState>();
+    assert(
+      state != null,
+      'KeyboardActions.dismiss requires a KeyboardActions ancestor.',
+    );
+    state!._dismiss();
+  }
+
   @override
   State<KeyboardActions> createState() => KeyboardActionsState();
 }

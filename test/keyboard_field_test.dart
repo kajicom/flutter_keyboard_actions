@@ -24,40 +24,59 @@ void main() {
     expect(find.byTooltip('Next'), findsNothing);
   });
 
-  testWidgets('KeyboardField toolbarButtons replace Done', (tester) async {
-    final focus = FocusNode();
-    addTearDown(focus.dispose);
-    var custom = false;
+  testWidgets(
+    'custom Done dismisses during a field switch and runs callbacks',
+    (tester) async {
+      final first = FocusNode();
+      final second = FocusNode();
+      addTearDown(first.dispose);
+      addTearDown(second.dispose);
+      final callbacks = <String>[];
 
-    await pumpKeyboardApp(
-      tester,
-      child: KeyboardActions(
-        child: KeyboardField(
-          focusNode: focus,
-          toolbarButtons: [
-            (node) => TextButton(
-                  onPressed: () {
-                    custom = true;
-                    node.unfocus();
-                  },
-                  child: const Text('Hide'),
+      await pumpKeyboardApp(
+        tester,
+        child: KeyboardActions(
+          onDismissed: (node) {
+            expect(node, second);
+            callbacks.add('dismissed');
+          },
+          child: Builder(
+            builder: (context) => Column(
+              children: [
+                TextField(focusNode: first),
+                KeyboardField(
+                  onDone: () => callbacks.add('done'),
+                  toolbarButtons: [
+                    (_) => TextButton(
+                          onPressed: () => KeyboardActions.dismiss(context),
+                          child: const Text('Hide'),
+                        ),
+                  ],
+                  child: TextField(focusNode: second),
                 ),
-          ],
-          child: TextField(focusNode: focus),
+              ],
+            ),
+          ),
         ),
-      ),
-    );
+      );
 
-    focus.requestFocus();
-    await tester.pumpAndSettle();
+      first.requestFocus();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Next'));
+      await tester.pump();
 
-    expect(find.text('Hide'), findsOneWidget);
-    expect(find.text('Done'), findsNothing);
+      expect(second.hasFocus, isTrue);
+      expect(find.text('Hide'), findsOneWidget);
+      expect(find.text('Done'), findsNothing);
 
-    await tester.tap(find.text('Hide'));
-    await tester.pumpAndSettle();
-    expect(custom, isTrue);
-  });
+      await tester.tap(find.text('Hide'));
+      await tester.pumpAndSettle();
+      expect(first.hasFocus, isFalse);
+      expect(second.hasFocus, isFalse);
+      expect(find.text('Hide'), findsNothing);
+      expect(callbacks, ['done', 'dismissed']);
+    },
+  );
 
   testWidgets('KeyboardField footer is shown', (tester) async {
     final focus = FocusNode();

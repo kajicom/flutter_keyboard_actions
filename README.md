@@ -141,32 +141,41 @@ can wrap just this field:
 Configure a field **next to the widget**, not in a global list. See [`example/lib/pages/custom_keyboard_page.dart`](example/lib/pages/custom_keyboard_page.dart) for a full custom-keyboard setup.
 
 ```dart
-KeyboardField(
-  toolbarButtons: [
-    (node) => IconButton(
-          icon: const Icon(Icons.keyboard_hide),
-          onPressed: node.unfocus,
-        ),
-  ],
-  child: const TextField(
-    decoration: InputDecoration(labelText: 'Email'),
+Builder(
+  builder: (context) => KeyboardField(
+    toolbarButtons: [
+      (_) => IconButton(
+            icon: const Icon(Icons.keyboard_hide),
+            onPressed: () => KeyboardActions.dismiss(context),
+          ),
+    ],
+    child: const TextField(
+      decoration: InputDecoration(labelText: 'Email'),
+    ),
   ),
 )
 ```
 
+`KeyboardActions.dismiss(context)` closes the keyboard and toolbar through the
+built-in Done button's dismissal operation, including its callbacks and
+cancellation of an unfinished field switch. The context must come from below
+`KeyboardActions`; a custom button's overlay context is outside that subtree.
+
 ### Custom keyboard panel
 
 ```dart
-KeyboardField(
-  showBar: false, // panel has its own Done
-  footer: NumericKeyboard(
-    notifier: amount,
-    onDone: () => focus.unfocus(),
-  ),
-  child: KeyboardCustomInput<String>(
-    focusNode: focus,
-    notifier: amount,
-    builder: (context, value, hasFocus) => Text(value),
+Builder(
+  builder: (context) => KeyboardField(
+    showBar: false, // panel has its own Done
+    footer: NumericKeyboard(
+      notifier: amount,
+      onDone: () => KeyboardActions.dismiss(context),
+    ),
+    child: KeyboardCustomInput<String>(
+      focusNode: focus,
+      notifier: amount,
+      builder: (context, value, hasFocus) => Text(value),
+    ),
   ),
 )
 ```
