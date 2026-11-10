@@ -54,6 +54,9 @@ Most keyboard packages wrap your tree in custom padding / `SingleChildScrollView
 3. When wrapping content inside a `Scaffold`, also reserves that height with real padding so a `ListView` (which pads from `MediaQuery.padding`, not `viewInsets`) clears the bar
 4. Scrolls the focused field into view when it would be covered by the keyboard or bar
 
+The overlay keeps the toolbar and custom keyboard panels inside the horizontal
+safe area, clear of display cutouts and system navigation buttons in landscape.
+
 ---
 
 ## Quick start

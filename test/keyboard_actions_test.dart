@@ -5,6 +5,72 @@ import 'package:keyboard_actions/keyboard_actions.dart';
 import 'helpers.dart';
 
 void main() {
+  for (final withFooter in [false, true]) {
+    testWidgets(
+      'overlay respects horizontal system insets with footer=$withFooter',
+      (tester) async {
+        tester.view.physicalSize = const Size(844, 390);
+        tester.view.devicePixelRatio = 1;
+        tester.view.viewInsets = FakeViewPadding(bottom: withFooter ? 0 : 180);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        addTearDown(tester.view.resetViewInsets);
+        addTearDown(tester.view.resetViewPadding);
+        addTearDown(tester.view.resetPadding);
+        final focus = FocusNode();
+        addTearDown(focus.dispose);
+
+        await pumpKeyboardApp(
+          tester,
+          child: SafeArea(
+            child: KeyboardActions.done(
+              child: KeyboardField(
+                focusNode: focus,
+                footer: withFooter
+                    ? const PreferredSize(
+                        preferredSize: Size.fromHeight(40),
+                        child: SizedBox(
+                          key: Key('footer'),
+                          height: 40,
+                          width: double.infinity,
+                          child: Text('Custom keyboard'),
+                        ),
+                      )
+                    : null,
+                child: TextField(focusNode: focus),
+              ),
+            ),
+          ),
+        );
+        focus.requestFocus();
+        await tester.pumpAndSettle();
+
+        for (final (left, right) in [(44.0, 48.0), (48.0, 44.0)]) {
+          final insets = FakeViewPadding(left: left, right: right);
+          tester.view.viewPadding = insets;
+          tester.view.padding = insets;
+          await tester.pumpAndSettle();
+
+          final done = find.widgetWithText(TextButton, 'Done');
+          final button = tester.getRect(done);
+          expect(button.left, greaterThanOrEqualTo(left));
+          expect(button.right, lessThanOrEqualTo(844 - right));
+          expect(done.hitTestable(), findsOneWidget);
+          if (withFooter) {
+            final footer = tester.getRect(find.byKey(const Key('footer')));
+            expect(footer.left, left);
+            expect(footer.right, 844 - right);
+          }
+          expect(tester.takeException(), isNull);
+        }
+
+        await tester.tap(find.text('Done'));
+        await tester.pumpAndSettle();
+        expect(focus.hasFocus, isFalse);
+      },
+    );
+  }
+
   testWidgets('done mode shows Done without arrows', (tester) async {
     final focus = FocusNode();
     addTearDown(focus.dispose);

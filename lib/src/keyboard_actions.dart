@@ -900,6 +900,61 @@ class KeyboardActionsState extends State<KeyboardActions>
     if (customPanel) _hide();
   }
 
+  /// Draws keyboard controls above the phone's on-screen keyboard. [KeyboardBar]
+  /// supplies buttons such as Done and Previous/Next. An application can also
+  /// supply a widget through [KeyboardField.footer], such as a number pad,
+  /// which appears below those buttons.
+  ///
+  /// [Overlay] is Flutter's layer for drawing widgets over page content.
+  /// KeyboardActions inserts the keyboard controls into that layer, outside the
+  /// page's content layout. The two portrait outlines below show separate
+  /// layers of the same screen. The keyboard controls float over the page, and
+  /// the phone's keyboard covers the bottom of both layers:
+  ///
+  /// ```text
+  /// Screen                                     Overlay with keyboard controls
+  /// +------------------------------------+     +------------------------------------+
+  /// | +--------------------------------+ |     | Transparent: page content          |
+  /// | | Page's SafeArea                | |     | remains visible underneath         |
+  /// | | +----------------------------+ | |     |                                    |
+  /// | | | Text fields and            | | |     |                                    |
+  /// | | | other page content         | | |     |                                    |
+  /// | | |                            | | |     |                                    |
+  /// | | |                            | | |     |                                    |
+  /// | | |                            | | |     |                                    |
+  /// | | |                            | | |     |                                    |
+  /// | | |                            | | |     |                                    |
+  /// | | |                            | | |     |                                    |
+  /// | | |                            | | |     | +--------------------------------+ |
+  /// | | +----------------------------+ | |     | | Positioned: full width         | |
+  /// | +--------------------------------+ |     | | +----------------------------+ | |
+  /// | Space reserved for controls        |     | | | SafeArea: left/right       | | |
+  /// |                                    |     | | | +------------------------+ | | |
+  /// |                                    |     | | | | KeyboardBar            | | | |
+  /// |                                    |     | | | | Done / Prev / Next     | | | |
+  /// |                                    |     | | | +------------------------+ | | |
+  /// |                                    |     | | | +------------------------+ | | |
+  /// |                                    |     | | | | Optional footer        | | | |
+  /// |                                    |     | | | | (KeyboardField.footer) | | | |
+  /// |                                    |     | | | +------------------------+ | | |
+  /// |                                    |     | | +----------------------------+ | |
+  /// |                                    |     | +--------------------------------+ |
+  /// |                                    |     | Gap above phone keyboard           |
+  /// +------------------------------------+     +------------------------------------+
+  /// | Phone's keyboard covers this       |     | Phone's keyboard covers this       |
+  /// | part of the window                 |     | part of the window                 |
+  /// |                                    |     |                                    |
+  /// |                                    |     |                                    |
+  /// +------------------------------------+     +------------------------------------+
+  /// ```
+  ///
+  /// The floating controls need their own horizontal SafeArea to stay clear of
+  /// display cutouts or system navigation buttons in landscape mode.
+  ///
+  /// Positioned places the controls above the phone's keyboard. The distance
+  /// between them comes from [KeyboardActionsThemeData.keyboardGap]; a negative
+  /// value allows overlap. When the phone's keyboard is hidden, the distance is
+  /// measured from the bottom of the Overlay instead.
   Widget _buildOverlay(BuildContext context) {
     final routeVisibility = _routeVisibility;
     final panelVisibility = _panelVisibility.value;
@@ -991,7 +1046,11 @@ class KeyboardActionsState extends State<KeyboardActions>
                   ),
                   child: Opacity(
                     opacity: routeVisibility * panelVisibility,
-                    child: panel,
+                    child: SafeArea(
+                      top: false,
+                      bottom: false,
+                      child: panel,
+                    ),
                   ),
                 ),
               ),
